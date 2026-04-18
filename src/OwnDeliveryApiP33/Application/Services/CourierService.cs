@@ -17,7 +17,8 @@ public class CourierService : ICourierService
     {
         var courier = await _context.Couriers
             .Include(c => c.User)
-            .FirstOrDefaultAsync(c => c.Id == courierId, ct);
+            // JWT `sub` currently stores User.Id; support direct courier lookup as well.
+            .FirstOrDefaultAsync(c => c.Id == courierId || c.UserId == courierId, ct);
 
         if (courier is null || courier.User is null)
         {

@@ -8,6 +8,9 @@ using OwnDeliveryApiP33.Application.Services;
 
 namespace OwnDeliveryApiP33.Controllers;
 
+/// <summary>
+/// Provides courier profile endpoints.
+/// </summary>
 [ApiController]
 [Route("api/v1/couriers")]
 [Produces("application/json")]
@@ -23,7 +26,13 @@ public class CouriersController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>Get the profile of the currently authenticated courier</summary>
+    /// <summary>
+    /// Returns the profile of the authenticated courier.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Courier profile returned.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Courier profile was not found.</response>
     [HttpGet("me")]
     [ProducesResponseType(typeof(CourierProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -46,7 +55,13 @@ public class CouriersController : ControllerBase
         }
     }
 
-    /// <summary>Get courier by ID</summary>
+    /// <summary>
+    /// Returns a courier profile by courier identifier.
+    /// </summary>
+    /// <param name="id">Courier identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Courier profile returned.</response>
+    /// <response code="404">Courier profile was not found.</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(CourierProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
