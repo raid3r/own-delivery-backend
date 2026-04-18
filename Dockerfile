@@ -3,15 +3,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Restore layer (cached until .csproj changes)
-COPY OwnDeliveryApiP33/OwnDeliveryApiP33.csproj OwnDeliveryApiP33/
-RUN dotnet restore OwnDeliveryApiP33/OwnDeliveryApiP33.csproj
+COPY src/OwnDeliveryApiP33/OwnDeliveryApiP33.csproj src/OwnDeliveryApiP33/
+RUN dotnet restore src/OwnDeliveryApiP33/OwnDeliveryApiP33.csproj
 
 # Copy source and publish
-COPY OwnDeliveryApiP33/ OwnDeliveryApiP33/
-RUN dotnet publish OwnDeliveryApiP33/OwnDeliveryApiP33.csproj \
+COPY src/OwnDeliveryApiP33/ src/OwnDeliveryApiP33/
+RUN dotnet publish src/OwnDeliveryApiP33/OwnDeliveryApiP33.csproj \
         -c Release \
-        -o /app/publish \
-        --no-restore
+        -o /app/publish
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
