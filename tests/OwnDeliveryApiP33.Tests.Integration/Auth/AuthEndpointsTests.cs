@@ -45,8 +45,8 @@ public class AuthEndpointsTests : IClassFixture<DeliveryApiFactory>
     public async Task Register_DuplicateEmail_Returns409()
     {
         var email = UniqueEmail();
-        var first  = new RegisterCourierRequest("A", "B", email, "Pass123", "+1");
-        var second = new RegisterCourierRequest("C", "D", email, "Pass456", "+2");
+        var first  = new RegisterCourierRequest("A", "B", email, "Pass1234", "+380501234567");
+        var second = new RegisterCourierRequest("C", "D", email, "Pass4567", "+380671112233");
 
         await _client.PostAsJsonAsync("/api/v1/auth/register", first);
         var response = await _client.PostAsJsonAsync("/api/v1/auth/register", second);
@@ -60,8 +60,8 @@ public class AuthEndpointsTests : IClassFixture<DeliveryApiFactory>
         var lowerEmail = UniqueEmail();
         var upperEmail = lowerEmail.ToUpper();
 
-        var first  = new RegisterCourierRequest("A", "B", lowerEmail, "Pass123", "+1");
-        var second = new RegisterCourierRequest("C", "D", upperEmail, "Pass456", "+2");
+        var first  = new RegisterCourierRequest("A", "B", lowerEmail, "Pass1234", "+380501234567");
+        var second = new RegisterCourierRequest("C", "D", upperEmail, "Pass4567", "+380671112233");
 
         await _client.PostAsJsonAsync("/api/v1/auth/register", first);
         var response = await _client.PostAsJsonAsync("/api/v1/auth/register", second);

@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OwnDeliveryApiP33\OwnDeliveryApiP33.csproj" />
+    <ProjectReference Include="..\..\src\OwnDeliveryApiP33\OwnDeliveryApiP33.csproj" />
   </ItemGroup>
 
 </Project>
