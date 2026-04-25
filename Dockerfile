@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+RUN dotnet tool install -g dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
+
 # Restore layer (cached until .csproj changes)
 COPY src/OwnDeliveryApiP33/OwnDeliveryApiP33.csproj src/OwnDeliveryApiP33/
 RUN dotnet restore src/OwnDeliveryApiP33/OwnDeliveryApiP33.csproj

@@ -61,3 +61,6 @@ CoverletSourceRootsMapping_*
 ## Logs
 logs/
 *.log
+# Build artifacts
+src/OwnDeliveryApiP33/obj/
+src/OwnDeliveryApiP33/bin/
