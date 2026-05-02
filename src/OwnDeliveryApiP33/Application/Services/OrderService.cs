@@ -174,6 +174,47 @@ public class OrderService : IOrderService
         return true;
     }
 
+    public async Task<PagedResponse<OrderResponse>> GetAvailableOrdersAsync(int skip = 0, int take = 20, CancellationToken ct = default)
+    {
+        var normalizedTake = Math.Clamp(take, 1, 100);
+        var normalizedSkip = Math.Max(skip, 0);
+
+        var total = await _unitOfWork.Orders.CountUnassignedOrdersAsync(ct);
+        var orders = await _unitOfWork.Orders.GetUnassignedOrdersAsync(normalizedSkip, normalizedTake, ct);
+        var items = orders.Select(MapToOrderResponse).ToList();
+
+        return new PagedResponse<OrderResponse>(
+            items,
+            total,
+            normalizedSkip,
+            normalizedTake,
+            normalizedSkip + items.Count < total);
+    }
+
+    public async Task<OrderResponse> AcceptOrderAsync(Guid orderId, Guid courierId, CancellationToken ct = default)
+    {
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct);
+        if (order == null)
+            throw new EntityNotFoundException(nameof(Order), orderId);
+
+        if (order.CourierId != null)
+            throw new OwnDeliveryApiP33.Application.Exceptions.InvalidOperationException(
+                $"Order {orderId} is already assigned to courier {order.CourierId}.");
+
+        if (order.Status != OrderStatus.New && order.Status != OrderStatus.WaitingForCourier)
+            throw new OwnDeliveryApiP33.Application.Exceptions.InvalidOperationException(
+                $"Cannot accept order in status {order.Status}.");
+
+        order.CourierId = courierId;
+        order.Status = OrderStatus.Accepted;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        await _unitOfWork.Orders.UpdateAsync(order, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return MapToOrderResponse(order);
+    }
+
     private OrderResponse MapToOrderResponse(Order order)
     {
         return new OrderResponse(

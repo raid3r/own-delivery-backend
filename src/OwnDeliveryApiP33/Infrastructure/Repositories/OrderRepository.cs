@@ -44,12 +44,20 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<Order>> GetUnassignedOrdersAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<Order>> GetUnassignedOrdersAsync(int skip = 0, int take = 20, CancellationToken ct = default)
     {
         return await _dbSet
             .Where(o => o.CourierId == null && (o.Status == OrderStatus.New || o.Status == OrderStatus.WaitingForCourier))
             .OrderByDescending(o => o.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .ToListAsync(ct);
+    }
+
+    public async Task<int> CountUnassignedOrdersAsync(CancellationToken ct = default)
+    {
+        return await _dbSet
+            .CountAsync(o => o.CourierId == null && (o.Status == OrderStatus.New || o.Status == OrderStatus.WaitingForCourier), ct);
     }
 
     public async Task<IEnumerable<Order>> GetOverdueOrdersAsync(CancellationToken ct = default)

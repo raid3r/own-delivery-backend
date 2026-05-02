@@ -28,4 +28,10 @@ public interface IOrderService : IApplicationService
 
     /// <summary>Rate order and courier</summary>
     Task<bool> RateOrderAsync(Guid orderId, RateOrderRequest request, CancellationToken ct = default);
+
+    /// <summary>Returns available (unassigned) orders a courier can accept.</summary>
+    Task<PagedResponse<OrderResponse>> GetAvailableOrdersAsync(int skip = 0, int take = 20, CancellationToken ct = default);
+
+    /// <summary>Assigns the courier to an available order. Throws if already taken.</summary>
+    Task<OrderResponse> AcceptOrderAsync(Guid orderId, Guid courierId, CancellationToken ct = default);
 }

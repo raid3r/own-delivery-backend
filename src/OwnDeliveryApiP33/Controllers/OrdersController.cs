@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OwnDeliveryApiP33.Application.DTOs;
+using OwnDeliveryApiP33.Application.Exceptions;
 using OwnDeliveryApiP33.Application.Extensions;
 using OwnDeliveryApiP33.Application.Services;
 
@@ -139,6 +140,64 @@ public class OrdersController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting customer orders");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Returns a paged list of available (unassigned) orders for couriers.
+    /// </summary>
+    /// <param name="skip">Number of records to skip.</param>
+    /// <param name="take">Number of records to return (max 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Available orders returned.</response>
+    [HttpGet("available")]
+    [ProducesResponseType(typeof(PagedResponse<OrderResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAvailableOrders([FromQuery] int skip = 0, [FromQuery] int take = 20, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _orderService.GetAvailableOrdersAsync(skip, take, ct);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting available orders");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Accepts an available order: assigns the authenticated courier and transitions status to Accepted.
+    /// </summary>
+    /// <param name="id">Order identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Order accepted successfully.</response>
+    /// <response code="409">Order is already assigned to another courier.</response>
+    /// <response code="404">Order was not found.</response>
+    [HttpPost("{id}/accept")]
+    [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AcceptOrder(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var courierId = User.GetUserId();
+            var order = await _orderService.AcceptOrderAsync(id, courierId, ct);
+            return Ok(order);
+        }
+        catch (EntityNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (OwnDeliveryApiP33.Application.Exceptions.InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error accepting order {OrderId}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
