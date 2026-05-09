@@ -56,13 +56,49 @@ public class CouriersController : ControllerBase
     }
 
     /// <summary>
+    /// Updates the current location of the authenticated courier.
+    /// </summary>
+    /// <param name="location">Current geo-location payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="204">Location was updated.</response>
+    /// <response code="400">Location payload is invalid.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Courier profile was not found.</response>
+    [HttpPost("location")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateLocation([FromBody] LocationDto location, CancellationToken ct)
+    {
+        try
+        {
+            var courierUserId = User.GetUserId();
+            await _courierService.UpdateLocationAsync(courierUserId, location, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Returns a courier profile by courier identifier.
     /// </summary>
     /// <param name="id">Courier identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <response code="200">Courier profile returned.</response>
     /// <response code="404">Courier profile was not found.</response>
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(CourierProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourierProfileResponse>> GetById(Guid id, CancellationToken ct)

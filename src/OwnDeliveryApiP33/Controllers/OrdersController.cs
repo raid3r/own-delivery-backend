@@ -80,7 +80,7 @@ public class OrdersController : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <response code="200">Order returned.</response>
     /// <response code="404">Order was not found.</response>
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrder(Guid id, CancellationToken ct)
@@ -149,15 +149,25 @@ public class OrdersController : ControllerBase
     /// </summary>
     /// <param name="skip">Number of records to skip.</param>
     /// <param name="take">Number of records to return (max 100).</param>
+    /// <param name="lat">Optional pickup latitude for geo filtering.</param>
+    /// <param name="lon">Optional pickup longitude for geo filtering.</param>
+    /// <param name="radiusKm">Optional search radius in kilometers.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <response code="200">Available orders returned.</response>
     [HttpGet("available")]
+    [Authorize(Roles = "Courier")]
     [ProducesResponseType(typeof(PagedResponse<OrderResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAvailableOrders([FromQuery] int skip = 0, [FromQuery] int take = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetAvailableOrders(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20,
+        [FromQuery] decimal? lat = null,
+        [FromQuery] decimal? lon = null,
+        [FromQuery] decimal? radiusKm = null,
+        CancellationToken ct = default)
     {
         try
         {
-            var response = await _orderService.GetAvailableOrdersAsync(skip, take, ct);
+            var response = await _orderService.GetAvailableOrdersAsync(skip, take, lat, lon, radiusKm, ct);
             return Ok(response);
         }
         catch (Exception ex)
@@ -168,14 +178,15 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Accepts an available order: assigns the authenticated courier and transitions status to Accepted.
+    /// Accepts an available order: assigns the authenticated courier and transitions status to Assigned.
     /// </summary>
     /// <param name="id">Order identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <response code="200">Order accepted successfully.</response>
     /// <response code="409">Order is already assigned to another courier.</response>
     /// <response code="404">Order was not found.</response>
-    [HttpPost("{id}/accept")]
+    [HttpPost("{id:guid}/accept")]
+    [Authorize(Roles = "Courier")]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -183,8 +194,8 @@ public class OrdersController : ControllerBase
     {
         try
         {
-            var courierId = User.GetUserId();
-            var order = await _orderService.AcceptOrderAsync(id, courierId, ct);
+            var courierUserId = User.GetUserId();
+            var order = await _orderService.AcceptOrderAsync(id, courierUserId, ct);
             return Ok(order);
         }
         catch (EntityNotFoundException ex)
@@ -212,7 +223,7 @@ public class OrdersController : ControllerBase
     /// <response code="200">Orders returned.</response>
     /// <response code="400">Request is invalid.</response>
     [HttpGet("courier/{courierId}")]
-    [ProducesResponseType(typeof(IEnumerable<OrderResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResponse<OrderResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCourierOrders(Guid courierId, [FromQuery] int skip = 0, [FromQuery] int take = 20, CancellationToken ct = default)
     {
         try
@@ -248,7 +259,7 @@ public class OrdersController : ControllerBase
     /// <response code="200">Order status updated.</response>
     /// <response code="400">Request is invalid.</response>
     /// <response code="404">Order was not found.</response>
-    [HttpPatch("{id}/status")]
+    [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -284,7 +295,7 @@ public class OrdersController : ControllerBase
     /// <response code="200">Order cancelled successfully.</response>
     /// <response code="400">Request is invalid.</response>
     /// <response code="404">Order was not found.</response>
-    [HttpPost("{id}/cancel")]
+    [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -322,7 +333,7 @@ public class OrdersController : ControllerBase
     /// <response code="200">Order rated successfully.</response>
     /// <response code="400">Request is invalid.</response>
     /// <response code="404">Order was not found.</response>
-    [HttpPost("{id}/rate")]
+    [HttpPost("{id:guid}/rate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

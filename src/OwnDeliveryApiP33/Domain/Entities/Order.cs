@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using OwnDeliveryApiP33.Domain.Enums;
 using OwnDeliveryApiP33.Domain.ValueObjects;
 
@@ -15,7 +16,10 @@ public class Order : BaseEntity
     public Guid TariffId { get; set; }
     public Tariff Tariff { get; set; } = null!;
     
-    public OrderStatus Status { get; set; } = OrderStatus.New;
+    public OrderStatus Status { get; set; } = OrderStatus.Pending;
+    
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = [];
     
     // Addresses
     public Address PickupAddress { get; set; } = null!;

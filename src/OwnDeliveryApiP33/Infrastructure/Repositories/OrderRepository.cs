@@ -7,6 +7,8 @@ namespace OwnDeliveryApiP33.Infrastructure.Repositories;
 
 public class OrderRepository : Repository<Order>, IOrderRepository
 {
+    private const double EarthRadiusKm = 6371d;
+
     public OrderRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default)
@@ -44,20 +46,30 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<Order>> GetUnassignedOrdersAsync(int skip = 0, int take = 20, CancellationToken ct = default)
+    public async Task<IEnumerable<Order>> GetUnassignedOrdersAsync(
+        int skip = 0,
+        int take = 20,
+        decimal? lat = null,
+        decimal? lon = null,
+        decimal? radiusKm = null,
+        CancellationToken ct = default)
     {
-        return await _dbSet
-            .Where(o => o.CourierId == null && (o.Status == OrderStatus.New || o.Status == OrderStatus.WaitingForCourier))
+        var query = BuildUnassignedOrdersQuery(lat, lon, radiusKm);
+
+        return await query
             .OrderByDescending(o => o.CreatedAt)
             .Skip(skip)
             .Take(take)
             .ToListAsync(ct);
     }
 
-    public async Task<int> CountUnassignedOrdersAsync(CancellationToken ct = default)
+    public async Task<int> CountUnassignedOrdersAsync(
+        decimal? lat = null,
+        decimal? lon = null,
+        decimal? radiusKm = null,
+        CancellationToken ct = default)
     {
-        return await _dbSet
-            .CountAsync(o => o.CourierId == null && (o.Status == OrderStatus.New || o.Status == OrderStatus.WaitingForCourier), ct);
+        return await BuildUnassignedOrdersQuery(lat, lon, radiusKm).CountAsync(ct);
     }
 
     public async Task<IEnumerable<Order>> GetOverdueOrdersAsync(CancellationToken ct = default)
@@ -81,5 +93,27 @@ public class OrderRepository : Repository<Order>, IOrderRepository
 
         var totalCost = await _dbSet.SumAsync(o => o.Cost);
         return totalCost / totalCount;
+    }
+
+    private IQueryable<Order> BuildUnassignedOrdersQuery(decimal? lat, decimal? lon, decimal? radiusKm)
+    {
+        var query = _dbSet.Where(o => o.CourierId == null && (o.Status == OrderStatus.Pending || o.Status == OrderStatus.PickedUp));
+
+        if (!lat.HasValue || !lon.HasValue || !radiusKm.HasValue)
+            return query;
+
+        var latitude = (double)lat.Value;
+        var longitude = (double)lon.Value;
+        var radius = (double)radiusKm.Value;
+        var latRad = latitude * Math.PI / 180d;
+        var lonRad = longitude * Math.PI / 180d;
+
+        return query.Where(o =>
+            EarthRadiusKm * 2d * Math.Asin(
+                Math.Sqrt(
+                    Math.Pow(Math.Sin((((double)o.PickupAddress.Latitude * Math.PI / 180d) - latRad) / 2d), 2d) +
+                    Math.Cos(latRad) * Math.Cos((double)o.PickupAddress.Latitude * Math.PI / 180d) *
+                    Math.Pow(Math.Sin((((double)o.PickupAddress.Longitude * Math.PI / 180d) - lonRad) / 2d), 2d)
+                )) <= radius);
     }
 }

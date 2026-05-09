@@ -4,6 +4,9 @@ namespace OwnDeliveryApiP33.Application.Services;
 
 public interface ITariffService : IApplicationService
 {
+    /// <summary>Get paged tariffs for the administration API</summary>
+    Task<PagedResponse<TariffResponse>> GetTariffsAsync(int skip = 0, int take = 20, bool? isActive = null, CancellationToken ct = default);
+
     /// <summary>Get tariff by ID</summary>
     Task<TariffResponse> GetTariffAsync(Guid tariffId, CancellationToken ct = default);
 

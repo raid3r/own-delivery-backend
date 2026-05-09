@@ -103,6 +103,7 @@ public class ApplicationDbContext : DbContext
                 .WithMany(t => t.Orders)
                 .HasForeignKey(e => e.TariffId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.RowVersion).IsRowVersion();
             entity.OwnsOne(e => e.PickupAddress);
             entity.OwnsOne(e => e.DeliveryAddress);
             entity.OwnsOne(e => e.Dimensions);

@@ -330,6 +330,12 @@ namespace OwnDeliveryApiP33.Migrations
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<DateTime?>("ScheduledDeliveryTime")
                         .HasColumnType("datetime2");
 

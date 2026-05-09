@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using OwnDeliveryApiP33.Application.DTOs;
 using OwnDeliveryApiP33.Application.Exceptions;
 using OwnDeliveryApiP33.Domain.Entities;
@@ -15,6 +16,36 @@ public class TariffService : ITariffService
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+    }
+
+    public async Task<PagedResponse<TariffResponse>> GetTariffsAsync(
+        int skip = 0,
+        int take = 20,
+        bool? isActive = null,
+        CancellationToken ct = default)
+    {
+        var normalizedTake = Math.Clamp(take, 1, 100);
+        var normalizedSkip = Math.Max(skip, 0);
+
+        var query = _unitOfWork.Tariffs.GetQueryable();
+        if (isActive.HasValue)
+            query = query.Where(t => t.IsActive == isActive.Value);
+
+        query = query.OrderBy(t => t.Name);
+
+        var total = await query.CountAsync(ct);
+        var tariffs = await query
+            .Skip(normalizedSkip)
+            .Take(normalizedTake)
+            .ToListAsync(ct);
+
+        var items = tariffs.Select(MapToResponse).ToList();
+        return new PagedResponse<TariffResponse>(
+            items,
+            total,
+            normalizedSkip,
+            normalizedTake,
+            normalizedSkip + items.Count < total);
     }
 
     public async Task<TariffResponse> GetTariffAsync(Guid tariffId, CancellationToken ct = default)

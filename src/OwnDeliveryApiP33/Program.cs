@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using OwnDeliveryApiP33.Application.Services;
 using OwnDeliveryApiP33.Application.Validators;
 using OwnDeliveryApiP33.Domain.Entities;
+using OwnDeliveryApiP33.Domain.Enums;
 using OwnDeliveryApiP33.Infrastructure.Data;
 using OwnDeliveryApiP33.Infrastructure.Middleware;
 using OwnDeliveryApiP33.Infrastructure.Repositories;
@@ -131,6 +132,35 @@ using (var scope = app.Services.CreateScope())
             db.Database.Migrate();
         else
             db.Database.EnsureCreated();
+
+        if (app.Environment.IsDevelopment())
+        {
+            var adminEmail = app.Configuration["AdminBootstrap:Email"] ?? "admin@owndelivery.local";
+            var adminPassword = app.Configuration["AdminBootstrap:Password"] ?? "AdminPass123!";
+            var normalizedEmail = adminEmail.ToLower();
+
+            if (!db.Users.Any(u => u.Email == normalizedEmail))
+            {
+                var passwordHasher = scope.ServiceProvider.GetRequiredService<PasswordHasher<User>>();
+                var admin = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = normalizedEmail,
+                    FullName = "Development Administrator",
+                    PhoneNumber = "+380000000000",
+                    Role = UserRole.Administrator,
+                    Status = UserStatus.Active,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                admin.PasswordHash = passwordHasher.HashPassword(admin, adminPassword);
+
+                db.Users.Add(admin);
+                db.SaveChanges();
+                logger.LogInformation("Development administrator user created: {Email}", normalizedEmail);
+            }
+        }
     }
     catch (Exception ex)
     {
