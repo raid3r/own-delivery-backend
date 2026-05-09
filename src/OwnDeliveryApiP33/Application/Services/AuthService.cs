@@ -79,6 +79,7 @@ public class AuthService : IAuthService
         var (token, expiresAt) = _tokenService.GenerateToken(user);
         return new AuthResponse(
             user.Id,
+            courier.Id,
             user.Email,
             request.FirstName,
             request.LastName,
@@ -112,10 +113,15 @@ public class AuthService : IAuthService
         _context.Users.Update(user);
         await _context.SaveChangesAsync(ct);
 
+        var courierId = await ResolveCourierIdAsync(user.Id, ct);
+        if (!courierId.HasValue)
+            throw new UnauthorizedAccessException("Courier profile not found for this user.");
+
         var (token, expiresAt) = _tokenService.GenerateToken(user);
         var fullName = user.FullName.Split(' ');
         return new AuthResponse(
             user.Id,
+            courierId,
             user.Email,
             fullName[0],
             fullName.Length > 1 ? fullName[1] : "",
@@ -149,10 +155,12 @@ public class AuthService : IAuthService
         _context.Users.Update(user);
         await _context.SaveChangesAsync(ct);
 
+        var courierId = await ResolveCourierIdAsync(user.Id, ct);
         var (token, expiresAt) = _tokenService.GenerateToken(user);
         var fullName = user.FullName.Split(' ');
         return new AuthResponse(
             user.Id,
+            courierId,
             user.Email,
             fullName[0],
             fullName.Length > 1 ? fullName[1] : "",
@@ -239,5 +247,13 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync(ct);
         
         return true;
+    }
+
+    private async Task<Guid?> ResolveCourierIdAsync(Guid userId, CancellationToken ct)
+    {
+        return await _context.Couriers
+            .Where(c => c.UserId == userId)
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync(ct);
     }
 }

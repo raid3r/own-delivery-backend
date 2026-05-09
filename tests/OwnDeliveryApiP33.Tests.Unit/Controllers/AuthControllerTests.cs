@@ -68,6 +68,8 @@ public class AuthControllerTests : IDisposable
         response.Email.Should().Be("jane@example.com");
         response.FirstName.Should().Be("Jane");
         response.LastName.Should().Be("Smith");
+        response.UserId.Should().NotBeEmpty();
+        response.CourierId.Should().NotBeEmpty();
         response.Token.Should().NotBeNullOrWhiteSpace();
         response.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
     }
@@ -130,6 +132,8 @@ public class AuthControllerTests : IDisposable
         var response = ok.Value.Should().BeOfType<AuthResponse>().Subject;
 
         response.Email.Should().Be("valid@example.com");
+        response.UserId.Should().NotBeEmpty();
+        response.CourierId.Should().NotBeEmpty();
         response.Token.Should().NotBeNullOrWhiteSpace();
         response.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
     }

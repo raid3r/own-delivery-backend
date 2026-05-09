@@ -72,6 +72,9 @@ public class AuthServiceTests : IDisposable
         result.Email.Should().Be("john@example.com");
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("Doe");
+        result.UserId.Should().NotBeEmpty();
+        result.CourierId.Should().NotBeEmpty();
+        result.CourierId.Should().NotBe(result.UserId);
     }
 
     [Fact]
@@ -264,11 +267,13 @@ public class AuthServiceTests : IDisposable
     public async Task LoginAsync_ReturnsCourierData()
     {
         var user = await SeedUserAsync("data@example.com", "Pass1234");
+        var courier = await _context.Couriers.SingleAsync(c => c.UserId == user.Id);
 
         var result = await _sut.LoginAsync(
             new LoginCourierRequest("data@example.com", "Pass1234"));
 
-        result.CourierId.Should().Be(user.Id);
+        result.UserId.Should().Be(user.Id);
+        result.CourierId.Should().Be(courier.Id);
     }
 
     // ?? Login - Validation Failures ??????????????????????????????????????????
@@ -337,6 +342,7 @@ public class AuthServiceTests : IDisposable
         var registerResult = await _sut.RegisterAsync(registerRequest);
         var loginResult = await _sut.LoginAsync(loginRequest);
 
+        loginResult.UserId.Should().Be(registerResult.UserId);
         loginResult.CourierId.Should().Be(registerResult.CourierId);
         loginResult.Email.Should().Be(registerResult.Email);
     }

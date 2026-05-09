@@ -7,14 +7,16 @@ namespace OwnDeliveryApiP33.Application.DTOs;
 /// Include the <c>Token</c> value in the <c>Authorization: Bearer {token}</c> header for all
 /// subsequent requests to protected endpoints. Token expiry is indicated by <c>ExpiresAt</c>.
 /// </remarks>
-/// <param name="CourierId">Identifier of the authenticated courier.</param>
-/// <param name="Email">Courier email address.</param>
-/// <param name="FirstName">Courier first name.</param>
-/// <param name="LastName">Courier last name.</param>
+/// <param name="UserId">Identifier of the authenticated user account.</param>
+/// <param name="CourierId">Identifier of the courier profile linked to the user, or null for non-courier roles.</param>
+/// <param name="Email">User email address.</param>
+/// <param name="FirstName">User first name.</param>
+/// <param name="LastName">User last name.</param>
 /// <param name="Token">JWT access token.</param>
 /// <param name="ExpiresAt">UTC timestamp when the token expires.</param>
 public record AuthResponse(
-    Guid CourierId,
+    Guid UserId,
+    Guid? CourierId,
     string Email,
     string FirstName,
     string LastName,

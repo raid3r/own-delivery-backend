@@ -35,7 +35,9 @@ public class AuthEndpointsTests : IClassFixture<DeliveryApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
         body.Should().NotBeNull();
-        body!.Token.Should().NotBeNullOrWhiteSpace();
+        body!.UserId.Should().NotBeEmpty();
+        body.CourierId.Should().NotBeEmpty();
+        body.Token.Should().NotBeNullOrWhiteSpace();
         body.Email.Should().Be(request.Email.ToLower());
         body.FirstName.Should().Be("Olga");
         body.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
@@ -99,7 +101,9 @@ public class AuthEndpointsTests : IClassFixture<DeliveryApiFactory>
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
-        body!.Token.Should().NotBeNullOrWhiteSpace();
+        body!.UserId.Should().NotBeEmpty();
+        body.CourierId.Should().NotBeEmpty();
+        body.Token.Should().NotBeNullOrWhiteSpace();
         body.Email.Should().Be(email.ToLower());
     }
 
@@ -164,8 +168,11 @@ public class AuthEndpointsTests : IClassFixture<DeliveryApiFactory>
             new LoginCourierRequest(email, password));
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
+        var registerBody = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
         var loginBody = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
-        loginBody!.Token.Should().NotBeNullOrWhiteSpace();
+        loginBody!.UserId.Should().Be(registerBody!.UserId);
+        loginBody.CourierId.Should().Be(registerBody.CourierId);
+        loginBody.Token.Should().NotBeNullOrWhiteSpace();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
